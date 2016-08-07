@@ -1,54 +1,70 @@
 #include <SerialIndex.h>
 
-static const int BUF_LEN    = 32;
-static const int NUM_CHARS  = 10;
-static const int NUM_INTS   = 10;
-static const int NUM_FLOATS = 10;
+SerialIndex Index;
 
 static int vint;
-static int vints[NUM_INTS];
-static char vstring[NUM_CHARS];
+static int vints[3];
+static char vstring[16];
 static float vfloat;
-static float vfloats[NUM_FLOATS];
-static char vping[NUM_CHARS];
-
-static unsigned char checksum(unsigned char *data, size_t data_len)
-{
-	unsigned char sum = 0;
-	size_t i;
-
-	for (i = 0; i < data_len; i++)
-		sum ^= data[i];
-
-	return sum;
-}
-
-static void fping()
-{
-	char buf[BUF_LEN] = { 0 };
-	unsigned char sum;
-
-	/* checksum */
-	sprintf(buf, "%d", vint);
-	sum = checksum((unsigned char *) buf, strlen(buf));
-
-	Serial.write(sum);
-	Serial.flush();
-}
+static float vfloats[3];
 
 void setup()
 {
-	Index.begin(9600);
+	Serial.begin(9600);
+	Index.setSerial(Serial);
 	Index.read(true);
-	Index.add("int", vint);
-	//Index.add("float", vfloat);
-	//Index.add("string", vstring);
-	//Index.add("ints", vints);
-	//Index.add("floats", vfloats);
-	//Index.add("ping", vping).listen("ping", fping);
+	Index.add("int", vint, 2).listen("int", fint);
+	Index.add("ints", vints).listen("ints", fints);
+	Index.add("string", vstring).listen("string", fstring);
+	Index.add("float", vfloat, 0.1).listen("float", ffloat);
+	Index.add("floats", vfloats).listen("floats", ffloats);
 }
 
 void loop()
 {
 	Index.update();
+}
+
+void fint()
+{
+	Serial.print("int: ");
+	Serial.println(vint);
+}
+
+void ffloat()
+{
+	Serial.print("float: ");
+	Serial.println(vfloat);
+}
+
+void fstring()
+{
+	Serial.print("string: ");
+	Serial.println(vstring);
+}
+
+void fints()
+{
+	Serial.print("ints: ");
+
+	for (int i = 0; i < LEN(vints); i++) {
+		Serial.print(vints[i]);
+		if (i < LEN(vints) - 1)
+			Serial.print(",");
+	}
+
+	Serial.println();
+}
+
+void ffloats()
+{
+	Serial.print("floats: ");
+
+	for (int i = 0; i < LEN(vfloats); i++) {
+		Serial.print(vfloats[i]);
+		if (i < LEN(vfloats) - 1)
+			Serial.print(",");
+	}
+
+	Serial.println();
 }
